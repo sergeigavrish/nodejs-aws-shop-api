@@ -1,0 +1,82 @@
+openapi: 3.0.0
+info:
+  title: Product Service API
+  version: 1.0.0
+servers:
+  - url: https://9fz5c7g8ei.execute-api.eu-west-1.amazonaws.com/dev
+    description: Product Service API on Dev stage
+paths:
+  /products:
+    get:
+      summary: Retrieve a list of products
+      operationId: getProducts
+      responses:
+        '200':
+          description: A list of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        '500':
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Internal server error
+  /products/{productId}:
+    get:
+      summary: Retrieve a product by its ID
+      operationId: getProductById
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          description: The ID of the product to retrieve
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A product object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Invalid product ID
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Product Id is not valid
+        '404':
+          description: Product not found
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Product not found
+        '500':
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Internal server error
+components:
+  schemas:
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        count:
+          type: number
