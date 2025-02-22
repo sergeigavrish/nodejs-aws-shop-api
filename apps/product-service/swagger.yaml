@@ -22,13 +22,10 @@ paths:
         '500':
           description: Internal server error
           content:
-            application/json:
+            text/plain:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Internal server error
+                type: string
+                example: Internal server error
   /products/{productId}:
     get:
       summary: Retrieve a product by its ID
@@ -50,33 +47,24 @@ paths:
         '400':
           description: Invalid product ID
           content:
-            application/json:
+            text/plain:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Product Id is not valid
+                type: string
+                example: Product Id is not valid
         '404':
           description: Product not found
           content:
-            application/json:
+            text/plain:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Product not found
+                type: string
+                example: Product not found
         '500':
           description: Internal server error
           content:
-            application/json:
+            text/plain:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Internal server error
+                type: string
+                example: Internal server error
 components:
   schemas:
     Product:
