@@ -11,7 +11,7 @@ export const getProductById: Handler = async (event: APIGatewayEvent) => {
     if (!productId) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ message: 'Product Id is not valid' }),
+        body: 'Product Id is not valid',
       };
     }
     const product = await productService.getProductById(productId);
@@ -23,9 +23,7 @@ export const getProductById: Handler = async (event: APIGatewayEvent) => {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Headers': 'Content-Type',
         },
-        body: JSON.stringify({
-          message: 'Product not found',
-        }),
+        body: 'Product not found',
       };
     }
 
@@ -44,9 +42,7 @@ export const getProductById: Handler = async (event: APIGatewayEvent) => {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'Content-Type',
       },
-      body: JSON.stringify({
-        message: 'Internal server error',
-      }),
+      body: 'Internal server error',
     };
   }
 };

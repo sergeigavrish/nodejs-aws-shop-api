@@ -14,7 +14,11 @@ describe.only('getProducts', () => {
     event = {} as APIGatewayEvent;
     context = {} as Context;
     callback = () => {};
-    (ProductService as jest.Mock).mockClear();
+    (ProductService.prototype.getProducts as jest.Mock).mockClear();
+  });
+
+  afterEach(() => {
+    (ProductService.prototype.getProducts as jest.Mock).mockClear();
   });
 
   describe('Status 200', () => {
@@ -42,6 +46,7 @@ describe.only('getProducts', () => {
 
       const response = await getProducts(event, context, callback);
 
+      expect(ProductService.prototype.getProducts).toHaveBeenCalledTimes(1);
       expect(response.statusCode).toBe(200);
       expect(JSON.parse(response.body)).toEqual(products);
     });
@@ -55,6 +60,7 @@ describe.only('getProducts', () => {
 
       const response = await getProducts(event, context, callback);
 
+      expect(ProductService.prototype.getProducts).toHaveBeenCalledTimes(1);
       expect(response.statusCode).toBe(500);
       expect(response.body).toBe('Internal server error');
     });
