@@ -1,49 +1,40 @@
 import { APIGatewayEvent, Handler } from 'aws-lambda';
 import { ProductService } from '../service/product-service';
 import { ProductRepository } from '../domain';
-import { validate } from 'uuid';
 import { DynamoDBDataSource } from '../data/dynamodb-data-source';
 import { client } from '../data/db/dynamo-db-service';
+import { createProductDtoValidator } from '../validators/create-product-dto.validator';
 
 const dataSource = new DynamoDBDataSource(client);
 const productRepository = new ProductRepository(dataSource);
 const productService = new ProductService(productRepository);
 
-export const getProductById: Handler = async (event: APIGatewayEvent) => {
+export const createProduct: Handler = async (event: APIGatewayEvent) => {
   try {
-    console.log('getProductById | ', event);
-    const productId = event.pathParameters?.productId;
-    if (!productId || !validate(productId)) {
-      console.log('getProductById | Status 400');
+    console.log('createProduct | ', event);
+    const productDto = JSON.parse(event.body!);
+    if (!createProductDtoValidator(productDto)) {
+      console.log('createProduct | Status 400');
       return {
         statusCode: 400,
-        body: 'Product Id is not valid',
-      };
-    }
-    const product = await productService.getProductById(productId);
-
-    if (!product) {
-      console.log('getProductById | Status 404');
-      return {
-        statusCode: 404,
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Headers': 'Content-Type',
         },
-        body: 'Product not found',
+        body: 'Product is not valid',
       };
     }
-
+    const createdProduct = await productService.createProduct(productDto);
     return {
-      statusCode: 200,
+      statusCode: 201,
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'Content-Type',
       },
-      body: JSON.stringify(product),
+      body: JSON.stringify(createdProduct),
     };
   } catch (error) {
-    console.log('getProductById | Status 500 | ', error);
+    console.log('createProduct | Status 500 | ', error);
     return {
       statusCode: 500,
       headers: {

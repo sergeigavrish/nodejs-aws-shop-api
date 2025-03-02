@@ -6,7 +6,9 @@
   },
   "scripts": {
     "test": "jest",
-    "deploy": "cdk deploy"
+    "test:watch": "jest --watchAll",
+    "deploy": "cdk deploy",
+    "seed": "ts-node src/seed/seed.ts"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.147",
@@ -19,7 +21,11 @@
     "typescript": "~5.6.3"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.758.0",
+    "@aws-sdk/lib-dynamodb": "^3.758.0",
     "aws-cdk-lib": "2.178.1",
-    "constructs": "^10.0.0"
+    "constructs": "^10.0.0",
+    "dotenv": "^16.4.7",
+    "uuid": "^11.1.0"
   }
 }

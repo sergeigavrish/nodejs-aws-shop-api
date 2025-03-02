@@ -11,8 +11,8 @@ describe('ProductServiceStack', () => {
     template = Template.fromStack(stack);
   });
 
-  test('Should create two Lambda functions', () => {
-    template.resourceCountIs('AWS::Lambda::Function', 2);
+  test('Should create Lambda functions', () => {
+    template.resourceCountIs('AWS::Lambda::Function', 3);
   });
 
   test('Should create API Gateway REST API', () => {
@@ -24,7 +24,7 @@ describe('ProductServiceStack', () => {
   });
 
   test('Should create API Gateway methods', () => {
-    template.resourceCountIs('AWS::ApiGateway::Method', 5);
+    template.resourceCountIs('AWS::ApiGateway::Method', 6)
   });
 
   test('API Gateway should have deployment and stage', () => {
