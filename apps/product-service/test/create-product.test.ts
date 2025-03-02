@@ -1,11 +1,12 @@
 import { APIGatewayEvent, Callback, Context } from 'aws-lambda';
 import { Product } from '../src/domain/models/product';
 import { ProductService } from '../src/service/product-service';
-import { getProductById } from '../src/presentation/get-product-by-id';
+import { createProduct } from '../src/presentation/create-product';
+import { CreateProductDto } from '../src/dtos';
 
 jest.mock('../src/service/product-service');
 
-describe.only('getProductById', () => {
+describe.only('createProduct', () => {
   let event: APIGatewayEvent;
   let context: Context;
   let callback: Callback;
@@ -13,89 +14,161 @@ describe.only('getProductById', () => {
   beforeEach(() => {
     event = {} as APIGatewayEvent;
     context = {} as Context;
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     callback = () => {};
-    (ProductService.prototype.getProductById as jest.Mock).mockClear();
+    (ProductService.prototype.createProduct as jest.Mock).mockClear();
   });
 
   afterEach(() => {
-    (ProductService.prototype.getProductById as jest.Mock).mockClear();
+    (ProductService.prototype.createProduct as jest.Mock).mockClear();
   });
 
   describe('Status 200', () => {
-    it('Should return all products', async () => {
-      const product: Product = {
-        id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+    it('Should create product', async () => {
+      const product: CreateProductDto = {
         title: 'Product 1',
         description: 'Description for Product 1',
         price: 10.99,
         count: 100,
       };
 
-      event.pathParameters = {
-        productId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-      };
-
+      event.body = JSON.stringify(product);
       (
-        ProductService.prototype.getProductById as jest.Mock
-      ).mockResolvedValueOnce(product);
+        ProductService.prototype.createProduct as jest.Mock
+      ).mockResolvedValueOnce({
+        ...product,
+        id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+      });
 
-      const response = await getProductById(event, context, callback);
+      const response = await createProduct(event, context, callback);
 
-      expect(ProductService.prototype.getProductById).toHaveBeenCalledTimes(1);
-      expect(ProductService.prototype.getProductById).toHaveBeenCalledWith(
-        event.pathParameters.productId
+      expect(ProductService.prototype.createProduct).toHaveBeenCalledTimes(1);
+      expect(ProductService.prototype.createProduct).toHaveBeenCalledWith(
+        product
       );
       expect(response.statusCode).toBe(200);
-      expect(JSON.parse(response.body)).toEqual(product);
+      expect(JSON.parse(response.body)).toEqual({
+        ...product,
+        id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+      });
     });
   });
 
   describe('Status 400', () => {
-    it('Should return "Product Id is not valid" message', async () => {
-      const response = await getProductById(event, context, callback);
+    it('Should return validation error message', async () => {
+      const data: CreateProductDto[] = [
+        {
+          title: '',
+          description: 'Description for Product 1',
+          price: 10.99,
+          count: 100,
+        },
+        {
+          title: null,
+          description: 'Description for Product 1',
+          price: 10.99,
+          count: 100,
+        },
+        {
+          title: true,
+          description: 'Description for Product 1',
+          price: 10.99,
+          count: 100,
+        },
+        {
+          title: 'Product 1',
+          description: null,
+          price: 10.99,
+          count: 100,
+        },
+        {
+          title: 'Product 1',
+          description: true,
+          price: 10.99,
+          count: 100,
+        },
+        {
+          title: 'Product 1',
+          description: 'Description for Product 1',
+          price: -1,
+          count: 100,
+        },
+        {
+          title: 'Product 1',
+          description: 'Description for Product 1',
+          price: null,
+          count: 100,
+        },
+        {
+          title: 'Product 1',
+          description: 'Description for Product 1',
+          price: '10',
+          count: 100,
+        },
+        {
+          title: 'Product 1',
+          description: 'Description for Product 1',
+          price: true,
+          count: 100,
+        },
+        {
+          title: 'Product 1',
+          description: 'Description for Product 1',
+          price: 10.99,
+          count: -1,
+        },
+        {
+          title: 'Product 1',
+          description: 'Description for Product 1',
+          price: 10.99,
+          count: null,
+        },
+        {
+          title: 'Product 1',
+          description: 'Description for Product 1',
+          price: 10.99,
+          count: '100',
+        },
+        {
+          title: 'Product 1',
+          description: 'Description for Product 1',
+          price: 10.99,
+          count: true,
+        },
+      ] as CreateProductDto[];
 
-      expect(ProductService.prototype.getProductById).not.toHaveBeenCalled();
-      expect(response.statusCode).toBe(400);
-      expect(response.body).toBe('Product Id is not valid');
-    });
-  });
+      data.forEach(async (product) => {
+        event.body = JSON.stringify(product);
 
-  describe('Status 404', () => {
-    it('Should return "Product not found" message', async () => {
-      (
-        ProductService.prototype.getProductById as jest.Mock
-      ).mockResolvedValueOnce(null);
+        const response = await createProduct(event, context, callback);
 
-      event.pathParameters = {
-        productId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-      };
-
-      const response = await getProductById(event, context, callback);
-
-      expect(ProductService.prototype.getProductById).toHaveBeenCalledTimes(1);
-      expect(ProductService.prototype.getProductById).toHaveBeenCalledWith(
-        event.pathParameters.productId
-      );
-      expect(response.statusCode).toBe(404);
-      expect(response.body).toBe('Product not found');
+        expect(ProductService.prototype.createProduct).not.toHaveBeenCalled();
+        expect(response.statusCode).toBe(400);
+        expect(response.body).toBe('Product is not valid');
+      });
     });
   });
 
   describe('Status 500', () => {
     it('Should return "Internal server error" message', async () => {
-      (
-        ProductService.prototype.getProductById as jest.Mock
-      ).mockRejectedValueOnce(new Error());
-
-      event.pathParameters = {
-        productId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+      const product: CreateProductDto = {
+        title: 'Product 1',
+        description: 'Description for Product 1',
+        price: 10.99,
+        count: 100,
       };
 
-      const response = await getProductById(event, context, callback);
+      (
+        ProductService.prototype.createProduct as jest.Mock
+      ).mockRejectedValueOnce(new Error());
 
-      expect(ProductService.prototype.getProductById).toHaveBeenCalledTimes(1);
-      expect(ProductService.prototype.getProductById).toHaveBeenCalledWith(
-        event.pathParameters.productId
+      event.body = JSON.stringify(product);
+
+      const response = await createProduct(event, context, callback);
+
+      expect(ProductService.prototype.createProduct).toHaveBeenCalledTimes(1);
+      expect(ProductService.prototype.createProduct).toHaveBeenCalledWith(
+        product
       );
       expect(response.statusCode).toBe(500);
       expect(response.body).toBe('Internal server error');

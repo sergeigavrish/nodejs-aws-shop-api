@@ -13,6 +13,7 @@ describe.only('getProductById', () => {
   beforeEach(() => {
     event = {} as APIGatewayEvent;
     context = {} as Context;
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     callback = () => {};
     (ProductService.prototype.getProductById as jest.Mock).mockClear();
   });
