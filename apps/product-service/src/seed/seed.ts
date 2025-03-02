@@ -2,11 +2,9 @@ import { DynamoDB, Put } from '@aws-sdk/client-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
 import { ProductEntity } from '../data/entities/product';
 import { StockEntity } from '../data/entities/stock';
-// import {dotenv} from ('dotenv');
+import { config } from 'dotenv';
 
-if (process.env.NODE_ENV !== 'local') {
-  // dotenv.config();
-}
+config();
 
 const PRODUCT_TABLE_NAME = 'products' as const;
 const STOCK_TABLE_NAME = 'stocks' as const;

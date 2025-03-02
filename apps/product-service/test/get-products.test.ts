@@ -1,5 +1,5 @@
 import { APIGatewayEvent, Callback, Context } from 'aws-lambda';
-import { Product } from '../src/models/product';
+import { Product } from '../src/domain/models/product';
 import { getProducts } from '../src/presentation/get-products';
 import { ProductService } from '../src/service/product-service';
 
