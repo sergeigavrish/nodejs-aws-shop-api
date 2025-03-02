@@ -46,7 +46,7 @@ describe.only('createProduct', () => {
       expect(ProductService.prototype.createProduct).toHaveBeenCalledWith(
         product
       );
-      expect(response.statusCode).toBe(200);
+      expect(response.statusCode).toBe(201);
       expect(JSON.parse(response.body)).toEqual({
         ...product,
         id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
