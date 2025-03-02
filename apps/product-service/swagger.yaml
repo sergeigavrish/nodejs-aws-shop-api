@@ -26,6 +26,36 @@ paths:
               schema:
                 type: string
                 example: Internal server error
+    post:
+      summary: Create a new product
+      operationId: createProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProduct'
+      responses:
+        '201':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Invalid product data
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Product is not valid
+        '500':
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Internal server error
   /products/{productId}:
     get:
       summary: Retrieve a product by its ID
@@ -80,3 +110,18 @@ components:
           type: number
         count:
           type: number
+    CreateProduct:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        count:
+          type: number
+      required:
+        - title
+        - price
+        - count

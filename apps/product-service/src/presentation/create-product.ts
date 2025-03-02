@@ -26,7 +26,7 @@ export const createProduct: Handler = async (event: APIGatewayEvent) => {
     }
     const createdProduct = await productService.createProduct(productDto);
     return {
-      statusCode: 200,
+      statusCode: 201,
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'Content-Type',
