@@ -1,13 +1,19 @@
-import { products } from '../data/mock-data';
-import { Product } from '../models/product';
+import { Product } from './models/product';
 import { IProductRepository } from './iproduct-repository';
+import { IDataSource } from '../data/idata-source';
 
 export class ProductRepository implements IProductRepository {
+  constructor(private dataSource: IDataSource) {}
+
   async getProducts(): Promise<Product[]> {
-    return products;
+    return this.dataSource.get();
   }
 
   async getProductById(productId: string): Promise<Product | null> {
-    return products.find((product) => product.id === productId) ?? null;
+    return this.dataSource.getById(productId);
+  }
+
+  async createProduct(product: Product): Promise<Product> {
+    return this.dataSource.create(product);
   }
 }

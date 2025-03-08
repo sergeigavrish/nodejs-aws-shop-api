@@ -1,5 +1,5 @@
 import { APIGatewayEvent, Callback, Context } from 'aws-lambda';
-import { Product } from '../src/models/product';
+import { Product } from '../src/domain/models/product';
 import { getProducts } from '../src/presentation/get-products';
 import { ProductService } from '../src/service/product-service';
 
@@ -13,6 +13,7 @@ describe.only('getProducts', () => {
   beforeEach(() => {
     event = {} as APIGatewayEvent;
     context = {} as Context;
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     callback = () => {};
     (ProductService.prototype.getProducts as jest.Mock).mockClear();
   });

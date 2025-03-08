@@ -1,12 +1,16 @@
-import { Handler } from 'aws-lambda';
+import { APIGatewayEvent, Handler } from 'aws-lambda';
 import { ProductService } from '../service/product-service';
 import { ProductRepository } from '../domain';
+import { client } from '../data/db/dynamo-db-service';
+import { DynamoDBDataSource } from '../data/dynamodb-data-source';
 
-const productRepository = new ProductRepository();
+const dataSource = new DynamoDBDataSource(client);
+const productRepository = new ProductRepository(dataSource);
 const productService = new ProductService(productRepository);
 
-export const getProducts: Handler = async () => {
+export const getProducts: Handler = async (event: APIGatewayEvent) => {
   try {
+    console.log('getProducts | ', event);
     const products = await productService.getProducts();
     return {
       statusCode: 200,
@@ -17,6 +21,7 @@ export const getProducts: Handler = async () => {
       body: JSON.stringify(products),
     };
   } catch (error) {
+    console.log('getProducts | ', error);
     return {
       statusCode: 500,
       headers: {
