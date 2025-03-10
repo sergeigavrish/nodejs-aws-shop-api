@@ -1,0 +1,58 @@
+openapi: 3.0.0
+info:
+  title: Import Service API
+  version: 1.0.0
+servers:
+  - url: https://9fz5c7g8ei.execute-api.eu-west-1.amazonaws.com/dev
+    description: Import Service API on Dev stage
+paths:
+  /import:
+    get:
+      summary: Generate a signed URL for file upload
+      operationId: importProductsFile
+      parameters:
+        - name: name
+          in: query
+          required: true
+          description: The name of the file to be uploaded
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Signed URL for file upload
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: Signed URL for S3 upload
+        '400':
+          description: Invalid file name
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: File name is required
+        '500':
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Internal server error
+components:
+  schemas:
+    ImportProduct:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        count:
+          type: number
+      required:
+        - title
+        - price
+        - count
