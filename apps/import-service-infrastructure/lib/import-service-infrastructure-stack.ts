@@ -53,6 +53,8 @@ export class ImportServiceInfrastructureStack extends Stack {
       IMPORT_SERVICE_S3_BUCKET_REGION:
         process.env.IMPORT_SERVICE_S3_BUCKET_REGION!,
       IMPORT_SERVICE_S3_BUCKET_ALLOWED_ORIGINS: allowedOrigins.join(','),
+      IMPORT_SERVICE_S3_BUCKET_COPY_FOLDER:
+        process.env.IMPORT_SERVICE_S3_BUCKET_COPY_FOLDER!,
     };
 
     const importProductsFileFunction = new NodejsFunction(

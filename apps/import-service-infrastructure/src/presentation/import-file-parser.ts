@@ -1,89 +1,81 @@
 import { S3Event, S3EventRecord } from 'aws-lambda';
-import {
-  S3Client,
-  GetObjectCommand,
-  GetObjectCommandOutput,
-} from '@aws-sdk/client-s3';
-import * as csvParser from 'csv-parser';
-import { Readable } from 'stream';
-
-export type Product = {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  count: number;
-};
+import { S3Client } from '@aws-sdk/client-s3';
+import { ImportProductsObjectService } from '../application/import-products-object-service';
+import { ImportProductsFileParsesService } from '../application/import-products-file-parses-service';
 
 const s3Client = new S3Client({
   region: process.env.IMPORT_SERVICE_S3_BUCKET_REGION,
 });
+const importProductsObjectService = new ImportProductsObjectService(s3Client);
+const importProductsFileParsesService = new ImportProductsFileParsesService();
 
 export const importFileParser = async (event: S3Event): Promise<void> => {
   try {
     console.log('importFileParser | ', event);
-    const objectRequests = event.Records.map((record) =>
-      getObjectCommandOutput(record)
-    );
-    const getObjectResults = await Promise.allSettled(objectRequests);
-    const objects = getObjectResults
-      .filter((object) => object.status === 'fulfilled')
-      .map((object) => object.value);
-    const readables = objects.map(getReadable);
-    await Promise.allSettled(readables.map(parseFile));
+    for (const record of event.Records) {
+      await handleRecord(record);
+    }
   } catch (err) {
     console.error('importFileParser | ', err);
   }
 };
 
-function mapS3EventRecordToGetObjectCommand(
-  event: S3EventRecord
-): GetObjectCommand {
-  const bucket = event.s3.bucket.name;
-  const key = decodeURIComponent(event.s3.object.key.replace(/\+/g, ' '));
-  return new GetObjectCommand({
-    Bucket: bucket,
-    Key: key,
-  });
-}
-
-async function getObjectCommandOutput(
-  event: S3EventRecord
-): Promise<GetObjectCommandOutput> {
-  const getObjectCommand = mapS3EventRecordToGetObjectCommand(event);
-  return s3Client
-    .send(getObjectCommand)
-    .then((output) => {
-      if (!output.Body) {
-        throw new Error('Failed to get object');
-      }
-      return output;
-    })
-    .catch((err) => {
-      console.error('importFileParser | ', err);
-      throw err;
-    });
-}
-
-function getReadable(output: GetObjectCommandOutput): Readable {
-  return output.Body as Readable;
-}
-
-async function parseFile(data: Readable): Promise<Product[]> {
-  return new Promise((resolve, reject) => {
-    const products: Product[] = [];
-    data
-      .pipe(csvParser())
-      .on('data', (row) => {
-        products.push(row);
-      })
-      .on('end', () => {
-        console.log('importFileParser | ', products);
-        resolve(products);
-      })
-      .on('error', (err) => {
-        console.error('importFileParser | ', err);
-        reject(err);
+async function handleRecord(record: S3EventRecord): Promise<void> {
+  try {
+    const bucket = record.s3.bucket.name;
+    const key = decodeURIComponent(record.s3.object.key.replace(/\+/g, ' '));
+    const readableObject = await importProductsObjectService.getReadableObject(
+      bucket,
+      key
+    );
+    if (!readableObject) {
+      console.error(
+        'importFileParser | Failed to get object for record ',
+        record
+      );
+      return;
+    }
+    const products = await importProductsFileParsesService
+      .parseFile(readableObject)
+      .catch((err) => {
+        console.error('ImportProductsFileParsesService | ', err);
+        return null;
       });
-  });
+    if (!products) {
+      console.error(
+        'importFileParser | Failed to parse object for record | ',
+        record
+      );
+      return;
+    }
+    console.log('importFileParser | Parsed products ', products);
+    const filePath = key.split('/');
+    const putFileName = filePath[filePath.length - 1];
+    const putResult = await importProductsObjectService.putReadableObject(
+      bucket,
+      putFileName,
+      process.env.IMPORT_SERVICE_S3_BUCKET_REGION!,
+      readableObject
+    );
+    if (!putResult) {
+      console.error(
+        'importFileParser | Failed to copy parsed object | ',
+        record
+      );
+      return;
+    }
+    const deleteResult = await importProductsObjectService.deleteReadableObject(
+      bucket,
+      key
+    );
+    if (!deleteResult) {
+      console.error(
+        'importFileParser | Failed to delete copied object | ',
+        record
+      );
+      return;
+    }
+  } catch (error) {
+    console.error('importFileParser | Failed to handle Record | ', record);
+  }
 }
