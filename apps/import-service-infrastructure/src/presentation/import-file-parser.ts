@@ -16,7 +16,7 @@ export const importFileParser = async (event: S3Event): Promise<void> => {
       await handleRecord(record);
     }
   } catch (err) {
-    console.error('importFileParser | ', err);
+    console.error('importFileParser | Something went wrong', err);
   }
 };
 
@@ -49,13 +49,11 @@ async function handleRecord(record: S3EventRecord): Promise<void> {
       return;
     }
     console.log('importFileParser | Parsed products ', products);
-    const filePath = key.split('/');
-    const putFileName = filePath[filePath.length - 1];
-    const putResult = await importProductsObjectService.putReadableObject(
+    const putResult = await importProductsObjectService.copyObject(
       bucket,
-      putFileName,
-      process.env.IMPORT_SERVICE_S3_BUCKET_REGION!,
-      readableObject
+      key,
+      process.env.IMPORT_SERVICE_S3_BUCKET_UPLOAD_FOLDER!,
+      process.env.IMPORT_SERVICE_S3_BUCKET_COPY_FOLDER!
     );
     if (!putResult) {
       console.error(
@@ -64,7 +62,7 @@ async function handleRecord(record: S3EventRecord): Promise<void> {
       );
       return;
     }
-    const deleteResult = await importProductsObjectService.deleteReadableObject(
+    const deleteResult = await importProductsObjectService.deleteObject(
       bucket,
       key
     );
@@ -76,6 +74,10 @@ async function handleRecord(record: S3EventRecord): Promise<void> {
       return;
     }
   } catch (error) {
-    console.error('importFileParser | Failed to handle Record | ', record);
+    console.error(
+      'importFileParser | Failed to handle Record | ',
+      error,
+      record
+    );
   }
 }

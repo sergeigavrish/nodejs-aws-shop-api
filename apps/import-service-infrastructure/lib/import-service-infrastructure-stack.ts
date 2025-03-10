@@ -80,7 +80,9 @@ export class ImportServiceInfrastructureStack extends Stack {
     );
 
     bucket.grantPut(importProductsFileFunction);
+    bucket.grantPut(importFileParserFunction);
     bucket.grantRead(importFileParserFunction);
+    bucket.grantDelete(importFileParserFunction);
     bucket.addEventNotification(
       EventType.OBJECT_CREATED,
       new LambdaDestination(importFileParserFunction),

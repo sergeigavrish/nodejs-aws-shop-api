@@ -1,4 +1,5 @@
 import {
+  CopyObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
   PutObjectCommand,
@@ -29,18 +30,19 @@ export class ImportProductsObjectService {
     }
   }
 
-  async putReadableObject(
+  async copyObject(
     bucket: string,
     key: string,
-    destination: string,
-    data: Readable
+    from: string,
+    to: string
   ): Promise<boolean> {
     try {
-      const command = new PutObjectCommand({
+      const command = new CopyObjectCommand({
         Bucket: bucket,
-        Key: `${destination}/${key}`,
-        Body: data,
+        CopySource: `${bucket}/${key}`,
+        Key: key.replace(from, to),
       });
+      console.log('ImportProductsObjectService | ', command.input);
       await this.client.send(command);
       return true;
     } catch (error) {
@@ -49,7 +51,7 @@ export class ImportProductsObjectService {
     }
   }
 
-  async deleteReadableObject(bucket: string, key: string): Promise<boolean> {
+  async deleteObject(bucket: string, key: string): Promise<boolean> {
     try {
       const command = new DeleteObjectCommand({
         Bucket: bucket,

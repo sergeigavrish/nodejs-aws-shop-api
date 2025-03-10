@@ -1,5 +1,5 @@
 import { Readable } from 'stream';
-import * as csvParser from 'csv-parser';
+import csvParser from 'csv-parser';
 import { Product } from '../domain';
 
 export class ImportProductsFileParsesService {

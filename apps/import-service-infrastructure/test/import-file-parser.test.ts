@@ -59,9 +59,9 @@ describe('importFileParser', () => {
     getReadableObjectMock = ImportProductsObjectService.prototype
       .getReadableObject as jest.Mock;
     putReadableObjectMock = ImportProductsObjectService.prototype
-      .putReadableObject as jest.Mock;
+      .copyObject as jest.Mock;
     deleteReadableObjectMock = ImportProductsObjectService.prototype
-      .deleteReadableObject as jest.Mock;
+      .deleteObject as jest.Mock;
     parseFileMock = ImportProductsFileParsesService.prototype
       .parseFile as jest.Mock;
     jest.resetModules();
@@ -243,6 +243,7 @@ describe('importFileParser', () => {
     ).not.toHaveBeenCalled();
     expect(console.error).toHaveBeenCalledWith(
       'importFileParser | Failed to handle Record | ',
+      mockError,
       mockEvent.Records[0]
     );
   });
