@@ -23,6 +23,7 @@ export class ImportServiceInfrastructureStack extends Stack {
       process.env.IMPORT_SERVICE_EXPORTED_DISTRIBUTION_DOMAIN_NAME!
     );
 
+
     const allowedOrigins: string[] = [`https://${cloudFront}`];
 
     if (process.env.IMPORT_SERVICE_ALLOWED_ORIGIN) {
