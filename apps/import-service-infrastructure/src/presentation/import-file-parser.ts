@@ -2,12 +2,18 @@ import { S3Event, S3EventRecord } from 'aws-lambda';
 import { S3Client } from '@aws-sdk/client-s3';
 import { ImportProductsObjectService } from '../application/import-products-object-service';
 import { ImportProductsFileParsesService } from '../application/import-products-file-parses-service';
+import { SQSClient } from '@aws-sdk/client-sqs';
 
 const s3Client = new S3Client({
   region: process.env.IMPORT_SERVICE_S3_BUCKET_REGION,
 });
+const sqsClient = new SQSClient({
+  region: process.env.IMPORT_SERVICE_S3_BUCKET_REGION,
+});
 const importProductsObjectService = new ImportProductsObjectService(s3Client);
-const importProductsFileParsesService = new ImportProductsFileParsesService();
+const importProductsFileParsesService = new ImportProductsFileParsesService(
+  sqsClient
+);
 
 export const importFileParser = async (event: S3Event): Promise<void> => {
   try {
@@ -35,20 +41,19 @@ async function handleRecord(record: S3EventRecord): Promise<void> {
       );
       return;
     }
-    const products = await importProductsFileParsesService
+    const parseResult = await importProductsFileParsesService
       .parseFile(readableObject)
       .catch((err) => {
         console.error('ImportProductsFileParsesService | ', err);
-        return null;
+        return false;
       });
-    if (!products) {
+    if (!parseResult) {
       console.error(
         'importFileParser | Failed to parse object for record | ',
         record
       );
       return;
     }
-    console.log('importFileParser | Parsed products ', products);
     const putResult = await importProductsObjectService.copyObject(
       bucket,
       key,

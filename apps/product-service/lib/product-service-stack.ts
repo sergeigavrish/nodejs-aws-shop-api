@@ -1,8 +1,18 @@
-import { CfnOutput, Stack, StackProps } from 'aws-cdk-lib';
+import {
+  CfnOutput,
+  CfnParameter,
+  Duration,
+  Stack,
+  StackProps,
+} from 'aws-cdk-lib';
 import { Cors, LambdaIntegration, RestApi } from 'aws-cdk-lib/aws-apigateway';
 import { Table } from 'aws-cdk-lib/aws-dynamodb';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
+import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import { SubscriptionFilter, Topic } from 'aws-cdk-lib/aws-sns';
+import { EmailSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
+import { Queue } from 'aws-cdk-lib/aws-sqs';
 import { Construct } from 'constructs';
 import { config } from 'dotenv';
 
@@ -24,9 +34,44 @@ export class ProductServiceStack extends Stack {
       process.env.STOCK_TABLE_NAME!
     );
 
+    const catalogItemsQueue = new Queue(
+      this,
+      'ProductServiceCatalogItemsQueue',
+      {
+        visibilityTimeout: Duration.minutes(1),
+        retentionPeriod: Duration.days(1),
+        receiveMessageWaitTime: Duration.seconds(20),
+      }
+    );
+
+    const catalogItemsEventSource = new SqsEventSource(catalogItemsQueue, {
+      batchSize: 5,
+    });
+
+    const createProductTopic = new Topic(this, 'CreateProductTopic ', {});
+    createProductTopic.addSubscription(
+      new EmailSubscription(process.env.CREATE_PRODUCT_HUGE_STOCK_TOPIC_EMAIL!, {
+        filterPolicy: {
+          count: SubscriptionFilter.numericFilter({
+            greaterThan: 10,
+          }),
+        },
+      })
+    );
+    createProductTopic.addSubscription(
+      new EmailSubscription(process.env.CREATE_PRODUCT_TOPIC_EMAIL!, {
+        filterPolicy: {
+          count: SubscriptionFilter.numericFilter({
+            lessThanOrEqualTo: 10,
+          }),
+        },
+      })
+    );
+
     const environment = {
       PRODUCT_TABLE_NAME: productsTable.tableName,
       STOCK_TABLE_NAME: stocksTable.tableName,
+      CREATE_PRODUCT_TOPIC_ARN: createProductTopic.topicArn,
     };
 
     const getProductsFunction = new NodejsFunction(
@@ -57,6 +102,17 @@ export class ProductServiceStack extends Stack {
       {
         entry: 'src/presentation/create-product.ts',
         handler: 'createProduct',
+        runtime: Runtime.NODEJS_22_X,
+        environment,
+      }
+    );
+
+    const catalogBatchProcessFunction = new NodejsFunction(
+      this,
+      'ProductServiceCatalogBatchProcess',
+      {
+        entry: 'src/presentation/catalog-batch-process.ts',
+        handler: 'catalogBatchProcess',
         runtime: Runtime.NODEJS_22_X,
         environment,
       }
@@ -94,13 +150,23 @@ export class ProductServiceStack extends Stack {
     productsTable.grantReadData(getProductsFunction);
     productsTable.grantReadData(getProductByIdFunction);
     productsTable.grantWriteData(createProductFunction);
+    productsTable.grantWriteData(catalogBatchProcessFunction);
     stocksTable.grantReadData(getProductsFunction);
     stocksTable.grantReadData(getProductByIdFunction);
     stocksTable.grantWriteData(createProductFunction);
+    stocksTable.grantWriteData(catalogBatchProcessFunction);
+    catalogBatchProcessFunction.addEventSource(catalogItemsEventSource);
+    createProductTopic.grantPublish(catalogBatchProcessFunction);
 
     new CfnOutput(this, 'ApiGatewayUrl', {
       value: productServiceApi.url,
       description: 'Product Service API Gateway endpoint URL',
+    });
+
+    new CfnOutput(this, 'CatalogItemsQueueArn', {
+      value: catalogItemsQueue.queueArn,
+      description: 'Catalog Items Queue ARN',
+      exportName: 'CatalogItemsQueueArn',
     });
   }
 }

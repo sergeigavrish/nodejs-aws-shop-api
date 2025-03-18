@@ -3,9 +3,9 @@ import { ProductService } from '../service/product-service';
 import { ProductRepository } from '../domain';
 import { validate } from 'uuid';
 import { DynamoDBDataSource } from '../data/dynamodb-data-source';
-import { client } from '../data/db/dynamo-db-service';
+import { dynamoDbClient } from '../data/cleints/dynamo-db-client';
 
-const dataSource = new DynamoDBDataSource(client);
+const dataSource = new DynamoDBDataSource(dynamoDbClient);
 const productRepository = new ProductRepository(dataSource);
 const productService = new ProductService(productRepository);
 
