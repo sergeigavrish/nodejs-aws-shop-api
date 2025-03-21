@@ -9,6 +9,7 @@ import {
   HttpMethods,
 } from 'aws-cdk-lib/aws-s3';
 import { LambdaDestination } from 'aws-cdk-lib/aws-s3-notifications';
+import { Queue } from 'aws-cdk-lib/aws-sqs';
 import { Construct } from 'constructs';
 
 import { config } from 'dotenv';
@@ -44,6 +45,13 @@ export class ImportServiceInfrastructureStack extends Stack {
       ],
     });
 
+    const catalogItemsQueueArn = Fn.importValue('CatalogItemsQueueArn');
+    const catalogItemsQueue = Queue.fromQueueArn(
+      this,
+      'CatalogItemsQueue',
+      catalogItemsQueueArn
+    );
+
     const environment = {
       IMPORT_SERVICE_S3_BUCKET_NAME: bucket.bucketName,
       IMPORT_SERVICE_S3_BUCKET_UPLOAD_FOLDER:
@@ -55,6 +63,7 @@ export class ImportServiceInfrastructureStack extends Stack {
       IMPORT_SERVICE_S3_BUCKET_ALLOWED_ORIGINS: allowedOrigins.join(','),
       IMPORT_SERVICE_S3_BUCKET_COPY_FOLDER:
         process.env.IMPORT_SERVICE_S3_BUCKET_COPY_FOLDER!,
+      SQS_QUEUE_URL: catalogItemsQueue.queueUrl,
     };
 
     const importProductsFileFunction = new NodejsFunction(
@@ -88,6 +97,7 @@ export class ImportServiceInfrastructureStack extends Stack {
       new LambdaDestination(importFileParserFunction),
       { prefix: process.env.IMPORT_SERVICE_S3_BUCKET_UPLOAD_FOLDER! }
     );
+    catalogItemsQueue.grantSendMessages(importFileParserFunction);
 
     const importServiceRestApi = new RestApi(this, 'ImportServiceRestApi', {
       deployOptions: {

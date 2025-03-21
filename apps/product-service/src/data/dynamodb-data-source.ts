@@ -79,7 +79,7 @@ export class DynamoDBDataSource implements IDataSource {
               description: product.description,
               price: product.price,
             },
-            ConditionExpression: 'attribute_not_exists(#id)',
+            ConditionExpression: 'attribute_not_exists(id)',
           },
         },
         {
@@ -89,7 +89,7 @@ export class DynamoDBDataSource implements IDataSource {
               product_id: product.id,
               count: product.count,
             },
-            ConditionExpression: 'attribute_not_exists(#product_id)',
+            ConditionExpression: 'attribute_not_exists(product_id)',
           },
         },
       ],

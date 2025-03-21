@@ -12,7 +12,7 @@ describe('ProductServiceStack', () => {
   });
 
   test('Should create Lambda functions', () => {
-    template.resourceCountIs('AWS::Lambda::Function', 3);
+    template.resourceCountIs('AWS::Lambda::Function', 4);
   });
 
   test('Should create API Gateway REST API', () => {
