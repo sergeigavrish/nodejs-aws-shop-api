@@ -13,6 +13,11 @@ export const basicAuthorizer: APIGatewayTokenAuthorizerHandler = async (
     const [authType, base64Credentials] = event.authorizationToken.split(' ');
 
     if (authType !== 'Basic' || !base64Credentials) {
+      console.log(
+        'basicAuthorizer | Invalid Token',
+        authType,
+        base64Credentials
+      );
       return getGatewayAuthorizerResult(
         'unauthorized',
         'Deny',
@@ -23,10 +28,8 @@ export const basicAuthorizer: APIGatewayTokenAuthorizerHandler = async (
       'utf-8'
     );
     const [username, password] = credentials.split(':');
-    if (
-      username !== process.env.USERNAME ||
-      password !== process.env.PASSWORD
-    ) {
+    if (!process.env[username] || password !== process.env[username]) {
+      console.log('basicAuthorizer | Invalid credentials', username, password);
       return getGatewayAuthorizerResult(
         'unauthorized',
         'Deny',
@@ -35,7 +38,7 @@ export const basicAuthorizer: APIGatewayTokenAuthorizerHandler = async (
     }
     return getGatewayAuthorizerResult(username, 'Allow', event.methodArn);
   } catch (error) {
-    console.error('basicAuthorizer | Status 500 | ', error);
+    console.error('basicAuthorizer | ', error);
     return getGatewayAuthorizerResult('unauthorized', 'Deny', event.methodArn);
   }
 };

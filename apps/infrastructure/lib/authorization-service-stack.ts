@@ -1,4 +1,5 @@
 import { CfnOutput, Stack, StackProps } from 'aws-cdk-lib';
+import { ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
@@ -18,6 +19,10 @@ export class AuthorizationServiceStack extends Stack {
       environment: {
         [process.env.USERNAME!]: process.env.PASSWORD!,
       },
+    });
+
+    basicAuthorizer.addPermission('ApiGatewayInvocation', {
+      principal: new ServicePrincipal('apigateway.amazonaws.com'),
     });
 
     new CfnOutput(this, 'BasicAuthorizerArn', {
