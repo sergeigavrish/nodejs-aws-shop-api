@@ -1,6 +1,11 @@
 import { Stack, StackProps, RemovalPolicy, Fn } from 'aws-cdk-lib';
-import { LambdaIntegration, RestApi } from 'aws-cdk-lib/aws-apigateway';
-import { Runtime } from 'aws-cdk-lib/aws-lambda';
+import {
+  AuthorizationType,
+  LambdaIntegration,
+  RestApi,
+  TokenAuthorizer,
+} from 'aws-cdk-lib/aws-apigateway';
+import { Function, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import {
   BlockPublicAccess,
@@ -9,6 +14,7 @@ import {
   HttpMethods,
 } from 'aws-cdk-lib/aws-s3';
 import { LambdaDestination } from 'aws-cdk-lib/aws-s3-notifications';
+import { Lambda } from 'aws-cdk-lib/aws-ses-actions';
 import { Queue } from 'aws-cdk-lib/aws-sqs';
 import { Construct } from 'constructs';
 
@@ -106,10 +112,27 @@ export class ImportServiceInfrastructureStack extends Stack {
       restApiName: 'Import Service Rest Api',
     });
 
+    const authorizationServiceBasicAuthorizerArn = Fn.importValue(
+      'AuthorizationServiceBasicAuthorizerArn'
+    );
+    const authorizationServiceBasicAuthorizer = Function.fromFunctionArn(
+      this,
+      'BasicAuthorizer',
+      authorizationServiceBasicAuthorizerArn
+    );
+
+    const tokenAuthorizer = new TokenAuthorizer(this, 'TokenAuthorizer', {
+      handler: authorizationServiceBasicAuthorizer,
+    });
+
     const importResource = importServiceRestApi.root.addResource('import');
     importResource.addMethod(
       'GET',
-      new LambdaIntegration(importProductsFileFunction)
+      new LambdaIntegration(importProductsFileFunction),
+      {
+        authorizer: tokenAuthorizer,
+        authorizationType: AuthorizationType.CUSTOM,
+      }
     );
   }
 }
