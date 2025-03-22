@@ -14,7 +14,6 @@ import {
   HttpMethods,
 } from 'aws-cdk-lib/aws-s3';
 import { LambdaDestination } from 'aws-cdk-lib/aws-s3-notifications';
-import { Lambda } from 'aws-cdk-lib/aws-ses-actions';
 import { Queue } from 'aws-cdk-lib/aws-sqs';
 import { Construct } from 'constructs';
 
