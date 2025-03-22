@@ -125,6 +125,7 @@ export class ImportServiceInfrastructureStack extends Stack {
     });
 
     const importResource = importServiceRestApi.root.addResource('import');
+    importResource.addCorsPreflight({ allowOrigins: allowedOrigins });
     importResource.addMethod(
       'GET',
       new LambdaIntegration(importProductsFileFunction),
