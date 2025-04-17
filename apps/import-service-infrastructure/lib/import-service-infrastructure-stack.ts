@@ -1,6 +1,12 @@
-import { Stack, StackProps, RemovalPolicy, Fn } from 'aws-cdk-lib';
-import { LambdaIntegration, RestApi } from 'aws-cdk-lib/aws-apigateway';
-import { Runtime } from 'aws-cdk-lib/aws-lambda';
+import { Stack, StackProps, RemovalPolicy, Fn, Duration } from 'aws-cdk-lib';
+import {
+  AuthorizationType,
+  LambdaIntegration,
+  ResponseType,
+  RestApi,
+  TokenAuthorizer,
+} from 'aws-cdk-lib/aws-apigateway';
+import { Function, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import {
   BlockPublicAccess,
@@ -104,12 +110,46 @@ export class ImportServiceInfrastructureStack extends Stack {
         stageName: 'dev',
       },
       restApiName: 'Import Service Rest Api',
+      defaultCorsPreflightOptions: { allowOrigins: allowedOrigins },
+    });
+
+    importServiceRestApi.addGatewayResponse('UnauthorizedResponse', {
+      type: ResponseType.UNAUTHORIZED,
+      responseHeaders: {
+        'Access-Control-Allow-Origin': "'*'",
+      },
+      statusCode: '401',
+    });
+    importServiceRestApi.addGatewayResponse('AccessDeniedResponse', {
+      type: ResponseType.ACCESS_DENIED,
+      responseHeaders: {
+        'Access-Control-Allow-Origin': "'*'",
+      },
+      statusCode: '403',
+    });
+
+    const authorizationServiceBasicAuthorizerArn = Fn.importValue(
+      'AuthorizationServiceBasicAuthorizerArn'
+    );
+    const authorizationServiceBasicAuthorizer = Function.fromFunctionArn(
+      this,
+      'BasicAuthorizer',
+      authorizationServiceBasicAuthorizerArn
+    );
+
+    const tokenAuthorizer = new TokenAuthorizer(this, 'TokenAuthorizer', {
+      handler: authorizationServiceBasicAuthorizer,
+      resultsCacheTtl: Duration.seconds(0),
     });
 
     const importResource = importServiceRestApi.root.addResource('import');
     importResource.addMethod(
       'GET',
-      new LambdaIntegration(importProductsFileFunction)
+      new LambdaIntegration(importProductsFileFunction),
+      {
+        authorizer: tokenAuthorizer,
+        authorizationType: AuthorizationType.CUSTOM,
+      }
     );
   }
 }
