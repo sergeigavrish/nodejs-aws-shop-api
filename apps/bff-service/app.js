@@ -2,7 +2,6 @@ import { createServer } from 'node:http';
 import axios from 'axios';
 
 const PORT = +process.env.PORT || 3000;
-const HOST = process.env.HOST || '0.0.0.0';
 
 function getBody(req) {
   return new Promise((resolve, reject) => {
@@ -85,6 +84,6 @@ const server = createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, HOST, () => {
-  console.log(`BFF Service is running at http://${HOST}:${PORT}`);
+server.listen(PORT, () => {
+  console.log(`BFF Service is running at http://localhost:${PORT}`);
 });
